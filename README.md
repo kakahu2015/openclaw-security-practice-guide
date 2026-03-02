@@ -8,6 +8,10 @@
 
 A definitive security practice guide designed specifically for **High-Privilege Autonomous AI Agents** (OpenClaw). It shifts the paradigm from traditional "host-based static defense" to "Agentic Zero-Trust Architecture", effectively mitigating risks like destructive operations, prompt injection, supply chain poisoning, and high-risk business logic execution.
 
+⚠️Before you start playing, please read the disclaimer and FAQ at the bottom.<br>
+⚠️Before you start playing, please read the disclaimer and FAQ at the bottom.<br>
+⚠️Before you start playing, please read the disclaimer and FAQ at the bottom.
+
 ## 🎯 Scope, Scenario & Core Principles
 
 > **This guide is designed for OpenClaw itself (Agent-facing), not as a traditional human-only hardening checklist.**  
@@ -78,6 +82,92 @@ To ensure your AI assistant doesn't bypass its own defenses out of "obedience", 
 Contributions, issues, and feature requests are welcome!
 
 Thanks: SlowMist Security Team([@SlowMist_Team](https://x.com/SlowMist_Team)), Edmund.X([@leixing0309](https://x.com/leixing0309))
+
+
+## ⚠️ Disclaimer
+
+### 1. Scope & Capability Prerequisites
+
+This guide assumes the executor (human or AI Agent) is capable of the following:
+
+- Understanding basic Linux system administration concepts (file permissions, chattr, cron, etc.)
+- Accurately distinguishing between red-line, yellow-line, and safe commands
+- Understanding the full semantics and side effects of a command before execution
+
+**If the executor (especially an AI model) lacks these capabilities, do not apply this guide directly.** An insufficiently capable model may misinterpret instructions, resulting in consequences worse than having no security policy at all.
+
+### 2. AI Model Execution Risks
+
+The core mechanism of this guide — "behavioral self-inspection" — relies on the AI Agent autonomously determining whether a command hits a red line. This introduces the following inherent risks:
+
+- **Misjudgment**: Weaker models may flag safe commands as red-line violations (blocking normal workflow), or classify dangerous commands as safe (causing security incidents)
+- **Interpretation drift**: Models may match red-line commands too literally (catching `rm -rf /` but missing `find / -delete`), or too broadly (treating all `curl` commands as red-line)
+- **Execution errors**: When applying protective measures like `chattr +i`, incorrect parameters may render the system unusable (e.g., locking the wrong file and disrupting OpenClaw's normal operation)
+- **Guide injection**: If this guide is injected as a prompt into the Agent, a malicious Skill could use prompt injection to tamper with the guide's content, making the Agent "believe" the red-line rules have been modified
+
+**The author of this guide assumes no liability for any losses caused by AI models misunderstanding or misexecuting the contents of this guide, including but not limited to: data loss, service disruption, configuration corruption, security vulnerability exposure, or credential leakage.**
+
+### 3. Not a Silver Bullet
+
+This guide provides a **basic defense-in-depth framework**, not a complete security solution:
+
+- It cannot defend against unknown vulnerabilities in the OpenClaw engine itself, the underlying OS, or dependency components
+- It cannot replace a professional security audit (production environments or scenarios involving real assets should be assessed separately)
+- Nightly audits are post-hoc detection — they can only discover anomalies that have already occurred and cannot roll back damage already done
+
+### 4. Environment Assumptions
+
+This guide was written for the following environment. Deviations require independent risk assessment:
+
+- Single-user, personal-use Linux server
+- OpenClaw running with root privileges, pursuing maximum capability
+- Network access is available via APIs such as GitHub (Git backup) and Telegram (audit notifications).
+
+### 5. Versioning & Timeliness
+
+This guide is based on the OpenClaw version available at the time of writing. Future versions may introduce native security mechanisms that render some measures obsolete or conflicting. Please periodically verify compatibility.
+
+---
+
+## FAQ
+
+### Q1: My model is relatively weak (e.g., a small-parameter model). Can I use this guide?
+
+**Not recommended to use the full guide directly.** Behavioral self-inspection requires the model to accurately parse command semantics, understand indirect harm, and maintain security context across multi-step operations. If your model can't reliably do this, consider: use only `chattr +i` (a pure system-level protection that doesn't depend on model capability), and have humans handle Skill installation inspections manually.
+
+### Q2: Will `chattr +i` affect OpenClaw's normal operation?
+
+**It might.** Once `openclaw.json` is locked, OpenClaw itself cannot update the file either — upgrades or configuration changes will fail with `Operation not permitted`. To modify, first unlock with `sudo chattr -i`, make changes, then re-lock. Also, **never lock `exec-approvals.json`** (as noted in the guide) — the engine needs to write metadata to it at runtime.
+
+### Q3: Could the audit script itself pose a security risk?
+
+The audit script runs with root privileges. If tampered with, it effectively becomes a backdoor that executes automatically every night. Consider protecting the script itself with `chattr +i`, and store the Telegram Bot Token in a separate file with `chmod 600` permissions.
+
+### Q4: What if the model accidentally applies `chattr +i` to the wrong file?
+
+Fix manually:
+
+```bash
+# Find all files with the immutable attribute set
+sudo lsattr -R /home/ 2>/dev/null | grep '\-i\-'
+
+# Unlock the mistakenly locked file
+sudo chattr -i 
+```
+
+If critical system files (e.g., `/etc/passwd`) were mistakenly locked, you may need to boot into recovery mode to fix it.
+
+### Q5: Is the red-line list exhaustive?
+
+**It can't be.** There are countless ways to achieve the same destructive effect on Linux (`find / -delete`, deletion via Python scripts, data exfiltration via DNS tunneling, etc.). The guide's principle of "when in doubt, treat it as a red line" is the fallback strategy, but it ultimately depends on the model's judgment.
+
+### Q6: Does Skill inspection only need to be done once?
+
+No. Re-inspection is needed when: a Skill is updated, the OpenClaw engine is updated, a Skill exhibits abnormal behavior, or the audit report shows a Skill fingerprint mismatch.
+
+### Q7: What if the OpenClaw engine itself has a security vulnerability?
+
+This guide's protective measures are all built on the assumption that "the engine itself is trustworthy" and cannot defend against engine-level vulnerabilities. Stay informed through OpenClaw's official security advisories and update the engine promptly.
 
 ## 📝 License
 This project is [MIT](LICENSE) licensed.
