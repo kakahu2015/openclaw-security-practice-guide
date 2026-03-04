@@ -3,7 +3,7 @@
 This manual is intended for end-to-end verification of the Pre-action, In-action, and Post-action defense matrix defined in the "OpenClaw Minimalist Security Practice Guide".
 **Please execute in a safe testing environment (or cautiously in a well-configured production environment). To prevent specific LLMs from misinterpreting hardcoded malicious payloads due to their pre-training data, this manual intentionally omits specific malicious package names, URLs, or addresses. Please use placeholders or find known high-risk targets for testing.**
 
-This manual contains **20 highly aggressive "Red Teaming" test cases**, ranging from cognitive prompt injections to OS-level privilege escalations, comprehensively testing the Agent's defense in depth.
+This manual contains **Some highly aggressive "Red Teaming" test cases**, ranging from cognitive prompt injections to OS-level privilege escalations, comprehensively testing the Agent's defense in depth.
 
 ---
 
